@@ -116,3 +116,33 @@ func TestSuggestPrice(t *testing.T) {
 		t.Fatalf("Gas price mismatch, want %d, got %d", expect, got)
 	}
 }
+
+func TestSuggestPriceFromWebApi(t *testing.T) {
+	config := Config{
+		Blocks:     3,
+		Percentile: 60,
+		Default:    big.NewInt(params.GWei),
+	}
+
+	backend := newTestBackend(t)
+	oracle := NewOracle(backend, config)
+
+	prince, err := oracle.SuggestPriceFromWebApi()
+	if err != nil {
+		t.Fatalf("get price from web api error")
+	}
+
+	if prince.Cmp(big.NewInt(1000)) <= 0 {
+		t.Fatalf("get wrong price from web api")
+	}
+
+	backend.chain.Config().ChainID = big.NewInt(420)
+	prince, err = oracle.SuggestPriceFromWebApi()
+	if err != nil {
+		t.Fatalf("get price from web api error")
+	}
+
+	if prince.Cmp(big.NewInt(1000)) <= 0 {
+		t.Fatalf("get wrong price from web api")
+	}
+}

@@ -21,6 +21,8 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/log"
+
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -252,6 +254,13 @@ func (b *LesApiBackend) ProtocolVersion() int {
 }
 
 func (b *LesApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
+	//get from web api
+	apiPrice, err := b.gpo.SuggestPriceFromWebApi()
+	if err == nil {
+		return apiPrice, nil
+	}
+
+	log.Info("get price from web api error: ", err)
 	return b.gpo.SuggestPrice(ctx)
 }
 

@@ -18,7 +18,11 @@ package gasprice
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"math/big"
+	"net/http"
 	"sort"
 	"sync"
 
@@ -101,6 +105,66 @@ func NewOracle(backend OracleBackend, params Config) *Oracle {
 		checkBlocks: blocks,
 		percentile:  percent,
 	}
+}
+
+func (gpo *Oracle) SuggestPriceFromWebApi() (*big.Int, error) {
+	//urlGasStation := "https://ethgasstation.info/api/ethgasAPI.json?api-key=XXAPI_Key_HereXXX"
+	urlAnyblockGoerli := "https://api.anyblock.tools/goerli/latest-minimum-gasprice"
+	urlAnyblockMainnet := "https://api.anyblock.tools/ethereum/latest-minimum-gasprice"
+	url := ""
+	client := &http.Client{}
+
+	chainID := gpo.backend.ChainConfig().ChainID.Int64()
+	if chainID == 1 {
+		url = urlAnyblockMainnet
+	} else if chainID == 420 {
+		url = urlAnyblockGoerli
+	} else {
+		return big.NewInt(0), errors.New("unsupport network")
+	}
+
+	// Query the tweet details from Twitter
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return big.NewInt(0), fmt.Errorf("get response error code: %d", res.StatusCode)
+	}
+
+	defer res.Body.Close()
+
+	var result struct {
+		Health      bool  `json:"health"`
+		BlockNumber int64 `json:"blockNumber"`
+		//BlockTime float64   `json:"blockTime"`
+		Slow     float64 `json:"slow"`
+		Standard float64 `json:"standard"`
+		Fast     float64 `json:"fast"`
+		Instant  float64 `json:"instant"`
+	}
+
+	err = json.NewDecoder(res.Body).Decode(&result)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	price := result.Instant * 1.1
+	fPriceGwei := new(big.Float)
+	fPriceGwei.Mul(big.NewFloat(price), big.NewFloat(params.GWei))
+	iPrinceGwei, _ := fPriceGwei.Int64()
+	bigPrinceGwei := big.NewInt(iPrinceGwei)
+	if bigPrinceGwei.Cmp(gpo.maxPrice) > 0 {
+		return gpo.maxPrice, nil
+	}
+	return bigPrinceGwei, nil
 }
 
 // SuggestPrice returns a gasprice so that newly created transaction can
