@@ -41,20 +41,20 @@ import (
 
 // FullNodeGPO contains default gasprice oracle settings for full node.
 var FullNodeGPO = gasprice.Config{
-	Blocks:          20,
-	Percentile:      60,
-	MaxPrice:        gasprice.DefaultMaxPrice,
-	IgnorePrice:     gasprice.DefaultIgnorePrice,
-	PriceMultiplier: float64(1.1),
+	Blocks:             20,
+	Percentile:         60,
+	MaxPrice:           gasprice.DefaultMaxPrice,
+	IgnorePrice:        gasprice.DefaultIgnorePrice,
+	GasPriceMultiplier: float64(1.1),
 }
 
 // LightClientGPO contains default gasprice oracle settings for light client.
 var LightClientGPO = gasprice.Config{
-	Blocks:          2,
-	Percentile:      60,
-	MaxPrice:        gasprice.DefaultMaxPrice,
-	IgnorePrice:     gasprice.DefaultIgnorePrice,
-	PriceMultiplier: float64(1.1),
+	Blocks:             2,
+	Percentile:         60,
+	MaxPrice:           gasprice.DefaultMaxPrice,
+	IgnorePrice:        gasprice.DefaultIgnorePrice,
+	GasPriceMultiplier: float64(1.1),
 }
 
 // Defaults contains default settings for use on the Ethereum main net.
