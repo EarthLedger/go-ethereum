@@ -702,7 +702,11 @@ var (
 		Usage: "Gas price below which gpo will ignore transactions",
 		Value: ethconfig.Defaults.GPO.IgnorePrice.Int64(),
 	}
-
+	GpoPriceMultiplierFlag = cli.Float64Flag{
+		Name:  "gpo.pricemultiplier",
+		Usage: "Gas price multiplier",
+		Value: ethconfig.Defaults.GPO.PriceMultiplier,
+	}
 	// Metrics flags
 	MetricsEnabledFlag = cli.BoolFlag{
 		Name:  "metrics",
@@ -1316,6 +1320,9 @@ func setGPO(ctx *cli.Context, cfg *gasprice.Config, light bool) {
 	}
 	if ctx.GlobalIsSet(GpoIgnoreGasPriceFlag.Name) {
 		cfg.IgnorePrice = big.NewInt(ctx.GlobalInt64(GpoIgnoreGasPriceFlag.Name))
+	}
+	if ctx.GlobalIsSet(GpoPriceMultiplierFlag.Name) {
+		cfg.PriceMultiplier = ctx.GlobalFloat64(GpoIgnoreGasPriceFlag.Name)
 	}
 }
 

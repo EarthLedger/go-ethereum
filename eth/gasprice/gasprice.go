@@ -37,13 +37,15 @@ const sampleNumber = 3 // Number of transactions sampled in a block
 
 var DefaultMaxPrice = big.NewInt(500 * params.GWei)
 var DefaultIgnorePrice = big.NewInt(2 * params.Wei)
+var DefaultPriceMultiplier = float64(1.1)
 
 type Config struct {
-	Blocks      int
-	Percentile  int
-	Default     *big.Int `toml:",omitempty"`
-	MaxPrice    *big.Int `toml:",omitempty"`
-	IgnorePrice *big.Int `toml:",omitempty"`
+	Blocks          int
+	Percentile      int
+	Default         *big.Int `toml:",omitempty"`
+	MaxPrice        *big.Int `toml:",omitempty"`
+	IgnorePrice     *big.Int `toml:",omitempty"`
+	PriceMultiplier float64  `toml:",omitempty"`
 }
 
 // OracleBackend includes all necessary background APIs for oracle.
@@ -56,13 +58,14 @@ type OracleBackend interface {
 // Oracle recommends gas prices based on the content of recent
 // blocks. Suitable for both light and full clients.
 type Oracle struct {
-	backend     OracleBackend
-	lastHead    common.Hash
-	lastPrice   *big.Int
-	maxPrice    *big.Int
-	ignorePrice *big.Int
-	cacheLock   sync.RWMutex
-	fetchLock   sync.Mutex
+	backend         OracleBackend
+	lastHead        common.Hash
+	lastPrice       *big.Int
+	maxPrice        *big.Int
+	ignorePrice     *big.Int
+	priceMultiplier float64
+	cacheLock       sync.RWMutex
+	fetchLock       sync.Mutex
 
 	checkBlocks int
 	percentile  int
@@ -97,13 +100,20 @@ func NewOracle(backend OracleBackend, params Config) *Oracle {
 	} else if ignorePrice.Int64() > 0 {
 		log.Info("Gasprice oracle is ignoring threshold set", "threshold", ignorePrice)
 	}
+	priceMultiplier := params.PriceMultiplier
+	if priceMultiplier <= float64(0) {
+		priceMultiplier = DefaultPriceMultiplier
+		log.Warn("Sanitizing invalid price multiplier oracle ignore price multiplier", "provided", params.PriceMultiplier, "updated", priceMultiplier)
+	}
+
 	return &Oracle{
-		backend:     backend,
-		lastPrice:   params.Default,
-		maxPrice:    maxPrice,
-		ignorePrice: ignorePrice,
-		checkBlocks: blocks,
-		percentile:  percent,
+		backend:         backend,
+		lastPrice:       params.Default,
+		maxPrice:        maxPrice,
+		ignorePrice:     ignorePrice,
+		priceMultiplier: priceMultiplier,
+		checkBlocks:     blocks,
+		percentile:      percent,
 	}
 }
 
@@ -156,7 +166,7 @@ func (gpo *Oracle) SuggestPriceFromWebApi() (*big.Int, error) {
 		return big.NewInt(0), err
 	}
 
-	price := result.Instant * 1.1
+	price := result.Fast * gpo.priceMultiplier
 	fPriceGwei := new(big.Float)
 	fPriceGwei.Mul(big.NewFloat(price), big.NewFloat(params.GWei))
 	iPrinceGwei, _ := fPriceGwei.Int64()

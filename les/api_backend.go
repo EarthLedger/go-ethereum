@@ -260,7 +260,7 @@ func (b *LesApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
 		return apiPrice, nil
 	}
 
-	log.Info("get price from web api error: ", err)
+	log.Info("get price from web api error: ", "api", err)
 	return b.gpo.SuggestPrice(ctx)
 }
 
