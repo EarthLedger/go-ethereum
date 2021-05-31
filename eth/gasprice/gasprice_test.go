@@ -119,9 +119,10 @@ func TestSuggestPrice(t *testing.T) {
 
 func TestSuggestPriceFromWebApi(t *testing.T) {
 	config := Config{
-		Blocks:     3,
-		Percentile: 60,
-		Default:    big.NewInt(params.GWei),
+		Blocks:          3,
+		Percentile:      60,
+		Default:         big.NewInt(params.GWei),
+		PriceMultiplier: float64(1.1),
 	}
 
 	backend := newTestBackend(t)
