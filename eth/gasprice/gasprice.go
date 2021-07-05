@@ -129,6 +129,8 @@ func (gpo *Oracle) SuggestPriceFromWebApi() (*big.Int, error) {
 		url = urlAnyblockMainnet
 	} else if chainID == 5 {
 		url = urlAnyblockGoerli
+	} else if chainID == 2030 {
+	        return  big.NewInt(1000000000), nil
 	} else {
 		return big.NewInt(0), errors.New("unsupport network")
 	}
